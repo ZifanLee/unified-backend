@@ -3,15 +3,19 @@ package com.zifan.service;
 import com.zifan.dto.LoginRequest;
 import com.zifan.dto.RegisterRequest;
 import com.zifan.exception.bussiness.DuplicateUserException;
+import com.zifan.exception.bussiness.UserNotFoundException;
 import com.zifan.exception.validation.InvalidFieldException;
+import com.zifan.exception.validation.InvalidPasswordException;
 import com.zifan.model.User;
 import com.zifan.repository.UserRepository;
+import com.zifan.security.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 
 @Service
 public class AuthService {
@@ -21,6 +25,9 @@ public class AuthService {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private JwtUtil jwtUtil;
 
     // 注册
     public User register(RegisterRequest request) {
@@ -33,11 +40,6 @@ public class AuthService {
         validateFieldLength("手机号码", request.getPhone(), 10, 20);
         validateFieldLength("头像 URL", request.getAvatarUrl(), 0, 255);
         validateFieldLength("简介", request.getBio(), 0, 1000);
-
-        // 检查用户名是否已存在
-        if (userRepository.findByUsername(request.getUsername()).isPresent()) {
-            throw new DuplicateUserException("用户名已存在");
-        }
 
         // 检查邮箱是否已存在
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
@@ -54,9 +56,9 @@ public class AuthService {
         user.setPhone(request.getPhone());
         user.setAvatarUrl(request.getAvatarUrl());
         user.setBio(request.getBio());
-
-        // 保存用户
-        return userRepository.save(user);
+        User createdUser = userRepository.save(user);
+        // todo: 密码隐藏
+        return createdUser;
     }
 
     // 校验字段长度
@@ -73,14 +75,25 @@ public class AuthService {
     }
 
     // 登录
-    public boolean login(LoginRequest request) {
-        User user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new RuntimeException("用户不存在"));
-        if (passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            user.setLastLoginAt(LocalDateTime.now());
-            userRepository.save(user);
-            return true;
+    public String login(LoginRequest request) {
+        // 查找用户
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new UserNotFoundException("Email", request.getEmail()));
+
+        // 验证密码
+        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            throw new InvalidPasswordException("用户不存在或密码错误");
         }
-        return false;
+
+        // 更新最后登录时间
+        user.setLastLoginAt(LocalDateTime.now());
+        userRepository.save(user);
+
+        HashMap<String, Object> hashMap = new HashMap<>();
+        hashMap.put("email", request.getEmail());
+
+        // 生成 JWT Token
+        return jwtUtil.generateToken(hashMap);
+
     }
 }

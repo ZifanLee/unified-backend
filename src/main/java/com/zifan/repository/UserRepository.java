@@ -11,7 +11,7 @@ import java.util.List;
 public interface UserRepository extends JpaRepository<User, Long> {
 
     // 根据用户名查找用户
-    Optional<User> findByUsername(String username);
+    List<User> findByUsername(String username);
 
     // 根据邮箱查找用户
     Optional<User> findByEmail(String email);

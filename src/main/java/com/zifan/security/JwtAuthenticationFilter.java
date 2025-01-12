@@ -1,10 +1,14 @@
 package com.zifan.security;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zifan.service.UserDetailsServiceImpl;
+import com.zifan.model.User;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -13,45 +17,93 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final JwtUtil jwtUtil;
-    private final UserDetailsServiceImpl userDetailsService;
+    @Autowired
+    private JwtUtil jwtUtil;
 
-    public JwtAuthenticationFilter(JwtUtil jwtUtil, UserDetailsServiceImpl userDetailsService) {
-        this.jwtUtil = jwtUtil;
-        this.userDetailsService = userDetailsService;
+    @Autowired
+    private UserDetailsServiceImpl userDetailsService;
+
+    // 定义公开路由（不需要鉴权的路由）
+    private static final String[] PUBLIC_ROUTES = {"/api/auth/login", "/api/auth/register"};
+
+    // 检查请求路由是否是公开路由
+    private boolean isPublicRoute(HttpServletRequest request) {
+        String requestUri = request.getRequestURI();
+        for (String publicRoute : PUBLIC_ROUTES) {
+            if (publicRoute.equals(requestUri)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // 返回 JSON 格式的错误响应
+    private void sendErrorResponse(HttpServletResponse response, int status, String message) throws IOException {
+        response.setStatus(status);
+        response.setContentType("application/json");
+
+        Map<String, String> errorResponse = new HashMap<>();
+        errorResponse.put("status", String.valueOf(status));
+        errorResponse.put("message", message);
+
+        new ObjectMapper().writeValue(response.getWriter(), errorResponse);
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-            throws ServletException, IOException {
-
-        String header = request.getHeader("Authorization");
-        String token = null;
-        String username = null;
-
-        if (header != null && header.startsWith("Bearer ")) {
-            token = header.substring(7);
-            username = jwtUtil.extractUsername(token);
-        }
-
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-            if (jwtUtil.validateToken(token) && jwtUtil.extractUsername(token).equals(userDetails.getUsername())) {
-                UsernamePasswordAuthenticationToken authenticationToken =
-                        new UsernamePasswordAuthenticationToken(
-                                userDetails,
-                                null,
-                                userDetails.getAuthorities()
-                        );
-                authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+    protected void doFilterInternal(
+            @NotNull HttpServletRequest request,
+            @NotNull HttpServletResponse response,
+            @NotNull FilterChain filterChain
+    ) throws ServletException, IOException {
+        try {
+            // 检查是否是公开路由
+            if (isPublicRoute(request)) {
+                filterChain.doFilter(request, response);
+                return;
             }
-        }
 
-        filterChain.doFilter(request, response);
+            // 从请求头中提取 Token
+            String header = request.getHeader("Authorization");
+            if (header == null || !header.startsWith("Bearer ")) {
+                sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized: Token is required");
+                return;
+            }
+
+            // 提取 Token 和用户邮箱
+            String token = header.substring(7);
+            String userEmail = jwtUtil.extractField(token, "userEmail", String.class);
+
+            // 验证 Token 合法性
+            if (userEmail == null || !jwtUtil.validateToken(token)) {
+                sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Invalid or expired token");
+                return;
+            }
+
+            // 加载用户信息
+            UserDetails userDetails = userDetailsService.loadUserByEmail(userEmail);
+            User user = (User) userDetails;
+
+            // 创建认证对象并存储到 SecurityContext 中
+            UsernamePasswordAuthenticationToken authenticationToken =
+                    new UsernamePasswordAuthenticationToken(
+                            user, // 存储完整的 User 对象
+                            null,
+                            user.getAuthorities()
+                    );
+            authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+
+            // 继续过滤器链
+            filterChain.doFilter(request, response);
+        } catch (Exception e) {
+            // 处理异常
+            sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Internal server error: " + e.getMessage());
+        }
     }
 }
