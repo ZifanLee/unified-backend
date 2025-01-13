@@ -4,7 +4,6 @@ import com.zifan.dto.request.LoginRequest;
 import com.zifan.dto.request.RegisterRequest;
 import com.zifan.exception.bussiness.DuplicateUserException;
 import com.zifan.exception.bussiness.UserNotFoundException;
-import com.zifan.exception.validation.InvalidFieldException;
 import com.zifan.exception.validation.InvalidPasswordException;
 import com.zifan.model.User;
 import com.zifan.repository.UserRepository;
@@ -13,7 +12,6 @@ import com.zifan.service.utils.ValidationUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;

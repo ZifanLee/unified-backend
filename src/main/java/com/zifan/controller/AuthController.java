@@ -1,5 +1,6 @@
 package com.zifan.controller;
 
+import com.zifan.aop.LoggingAspect;
 import com.zifan.dto.request.LoginRequest;
 import com.zifan.dto.request.RegisterRequest;
 import com.zifan.dto.response.LoginResponse;
@@ -11,6 +12,8 @@ import com.zifan.exception.validation.InvalidPasswordException;
 import com.zifan.security.JwtUtil;
 import com.zifan.service.AuthService;
 import com.zifan.model.User;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,9 +32,12 @@ public class AuthController {
     @Autowired
     private JwtUtil jwtUtil;
 
+    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
+
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
+        boolean hasException = false;
         try {
             // 调用 Service 层注册方法
             User user = authService.register(request);
@@ -48,29 +54,39 @@ public class AuthController {
 
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (DuplicateUserException e) {
+            hasException = true;
             // 邮箱重复
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("status", HttpStatus.BAD_REQUEST.value());
             errorResponse.put("message", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         } catch (InvalidFieldException e) {
+            hasException = true;
             // 字段校验失败
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("status", HttpStatus.BAD_REQUEST.value());
             errorResponse.put("message", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         } catch (IllegalArgumentException e) {
+            hasException = true;
             // 非法参数
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("status", HttpStatus.BAD_REQUEST.value());
             errorResponse.put("message", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         } catch (Exception e) {
+            hasException = true;
             // 其他异常
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
             errorResponse.put("message", "注册失败，请稍后重试");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        } finally {
+            if (hasException) {
+                logger.info("用户 {} 注册失败", request.getEmail());
+            } else {
+                logger.info("用户 {} 注册成功", request.getEmail());
+            }
         }
     }
 
