@@ -1,4 +1,4 @@
-package com.zifan.dto;
+package com.zifan.dto.request;
 
 import lombok.Data;
 
@@ -13,3 +13,4 @@ public class RegisterRequest {
     private String avatarUrl;
     private String bio;
 }
+

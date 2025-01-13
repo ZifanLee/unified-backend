@@ -1,7 +1,9 @@
 package com.zifan.controller;
 
-import com.zifan.dto.LoginRequest;
-import com.zifan.dto.RegisterRequest;
+import com.zifan.dto.request.LoginRequest;
+import com.zifan.dto.request.RegisterRequest;
+import com.zifan.dto.response.LoginResponse;
+import com.zifan.dto.utils.DtoConverter;
 import com.zifan.exception.bussiness.DuplicateUserException;
 import com.zifan.exception.bussiness.UserNotFoundException;
 import com.zifan.exception.validation.InvalidFieldException;
@@ -33,16 +35,16 @@ public class AuthController {
         try {
             // 调用 Service 层注册方法
             User user = authService.register(request);
-            // 返回注册成功的响应
+            LoginResponse loginResponse = DtoConverter.ConvertUser2LoginResponse(user);
             Map<String, Object> response = new HashMap<>();
-            response.put("status", HttpStatus.CREATED.value());
-            response.put("message", "注册成功");
-            response.put("data", user); // 返回注册的用户信息
-
             HashMap<String, Object> hashMap = new HashMap<>();
             hashMap.put("email", request.getEmail());
             String token = jwtUtil.generateToken(hashMap);
-            response.put("token", token);
+            loginResponse.setToken(token);
+
+            response.put("status", HttpStatus.CREATED.value());
+            response.put("message", "注册成功");
+            response.put("data", loginResponse); // 返回注册的用户信息
 
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (DuplicateUserException e) {
@@ -53,6 +55,12 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         } catch (InvalidFieldException e) {
             // 字段校验失败
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("status", HttpStatus.BAD_REQUEST.value());
+            errorResponse.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        } catch (IllegalArgumentException e) {
+            // 非法参数
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("status", HttpStatus.BAD_REQUEST.value());
             errorResponse.put("message", e.getMessage());

@@ -1,4 +1,4 @@
-package com.zifan.dto;
+package com.zifan.dto.request;
 
 import lombok.Data;
 

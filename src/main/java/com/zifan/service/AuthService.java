@@ -1,7 +1,7 @@
 package com.zifan.service;
 
-import com.zifan.dto.LoginRequest;
-import com.zifan.dto.RegisterRequest;
+import com.zifan.dto.request.LoginRequest;
+import com.zifan.dto.request.RegisterRequest;
 import com.zifan.exception.bussiness.DuplicateUserException;
 import com.zifan.exception.bussiness.UserNotFoundException;
 import com.zifan.exception.validation.InvalidFieldException;
@@ -9,6 +9,7 @@ import com.zifan.exception.validation.InvalidPasswordException;
 import com.zifan.model.User;
 import com.zifan.repository.UserRepository;
 import com.zifan.security.JwtUtil;
+import com.zifan.service.utils.ValidationUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -31,15 +32,15 @@ public class AuthService {
 
     // 注册
     public User register(RegisterRequest request) {
-        // 校验字段长度
-        validateFieldLength("用户名", request.getUsername(), 3, 50);
-        validateFieldLength("邮箱", request.getEmail(), 5, 100);
-        validateFieldLength("密码", request.getPassword(), 6, 255);
-        validateFieldLength("名字", request.getFirstName(), 1, 50);
-        validateFieldLength("姓氏", request.getLastName(), 1, 50);
-        validateFieldLength("手机号码", request.getPhone(), 10, 20);
-        validateFieldLength("头像 URL", request.getAvatarUrl(), 0, 255);
-        validateFieldLength("简介", request.getBio(), 0, 1000);
+        // 校验字段
+        ValidationUtils.validateUsername(request.getUsername());
+        ValidationUtils.validatePassword(request.getPassword());
+        ValidationUtils.validateEmail(request.getEmail());
+        ValidationUtils.validateName(request.getFirstName(), "名字");
+        ValidationUtils.validateName(request.getLastName(), "姓氏");
+        ValidationUtils.validatePhone(request.getPhone());
+        ValidationUtils.validateAvatarUrl(request.getAvatarUrl());
+        ValidationUtils.validateBio(request.getBio());
 
         // 检查邮箱是否已存在
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
@@ -57,22 +58,10 @@ public class AuthService {
         user.setAvatarUrl(request.getAvatarUrl());
         user.setBio(request.getBio());
         User createdUser = userRepository.save(user);
-        // todo: 密码隐藏
+        createdUser.setPasswordHash("*".repeat(createdUser.getPasswordHash().length()));
         return createdUser;
     }
 
-    // 校验字段长度
-    private void validateFieldLength(String fieldName, String value, int minLength, int maxLength) {
-        if (!StringUtils.hasText(value)) {
-            if (minLength > 0) {
-                throw new InvalidFieldException(fieldName + "不能为空");
-            }
-            return; // 允许空值
-        }
-        if (value.length() < minLength || value.length() > maxLength) {
-            throw new InvalidFieldException(fieldName + "长度必须在 " + minLength + " 到 " + maxLength + " 之间");
-        }
-    }
 
     // 登录
     public String login(LoginRequest request) {
