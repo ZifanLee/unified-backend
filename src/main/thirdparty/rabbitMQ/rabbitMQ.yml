@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    container_name: rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"  # AMQP 协议端口（用于客户端通信）
+      - "15672:15672"  # RabbitMQ 管理界面端口
+      - "61613:61613"  # STOMP 协议端口（用于 WebSocket 通信）
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin  # 默认用户名
+      - RABBITMQ_DEFAULT_PASS=admin123  # 默认密码
+      - RABBITMQ_DEFAULT_VHOST=/  # 默认虚拟主机
+    volumes:
+      - ./data:/var/lib/rabbitmq  # 数据目录挂载
+      - ./logs:/var/log/rabbitmq  # 日志目录挂载
+    networks:
+      - rabbitmq-network
+
+networks:
+  rabbitmq-network:
+    driver: bridge

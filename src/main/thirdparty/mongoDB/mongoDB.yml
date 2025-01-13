@@ -1,0 +1,22 @@
+version: '1.0'
+
+services:
+  mongodb:
+    image: mongo:6.0  # 使用 MongoDB 6.0 版本
+    container_name: mongodb
+    restart: always
+    ports:
+      - "27017:27017"  # 将 MongoDB 默认端口映射到宿主机
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root  # 初始化 root 用户
+      - MONGO_INITDB_ROOT_PASSWORD=root123  # 初始化 root 密码
+      - MONGO_INITDB_DATABASE=lingxi  # 初始化数据库
+    volumes:
+      - ./mongo-data:/data/db  # 数据目录挂载
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro  # 初始化脚本
+    networks:
+      - mongodb-network
+
+networks:
+  mongodb-network:
+    driver: bridge
