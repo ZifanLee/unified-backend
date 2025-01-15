@@ -15,7 +15,7 @@ public class JwtUtilTest {
     @Autowired
     private JwtUtil jwtUtil;
 
-    private String token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6ImxpemlmYW5AcXEuY29tIiwiZXhwIjoxNzM2Nzg0NjI2fQ.phNzG-RzYhNkzm6I3SI0Q46teTU7wGqK3uN92vqykWM";
+    private String token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6ImxpemlmYW4yQHFxLmNvbSIsImV4cCI6MTczNjkxODQ1OH0.x8VJZ57CNh83TYWTV6lxEdBFLwIHOU5IpuY4H32rGG4";
 
     @Test
     public void testGenerateToken() {
@@ -44,5 +44,7 @@ public class JwtUtilTest {
     @Test
     public void testExtractEmail() {
         System.out.println(jwtUtil.extractEmail(this.token));
+
+        System.out.println(jwtUtil.extractField(this.token, "email", String.class));
     }
 }

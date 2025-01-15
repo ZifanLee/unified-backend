@@ -8,6 +8,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -28,6 +30,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Autowired
     private UserDetailsServiceImpl userDetailsService;
+
+    private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
     // 定义公开路由（不需要鉴权的路由）
     private static final String[] PUBLIC_ROUTES = {"/api/auth/login", "/api/auth/register"};
@@ -62,9 +66,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NotNull FilterChain filterChain
     ) throws ServletException, IOException {
         try {
+            logger.info("Start Authentication Process....");
+
             // 检查是否是公开路由
             if (isPublicRoute(request)) {
                 filterChain.doFilter(request, response);
+                logger.info("Skip Authentication Process with public router, request detail: {}", request);
                 return;
             }
 
@@ -72,16 +79,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String header = request.getHeader("Authorization");
             if (header == null || !header.startsWith("Bearer ")) {
                 sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized: Token is required");
+                logger.info("Fail to Extract Token  or invalid token format, request detail: {}", request);
                 return;
             }
 
             // 提取 Token 和用户邮箱
             String token = header.substring(7);
-            String userEmail = jwtUtil.extractField(token, "userEmail", String.class);
+            String userEmail = jwtUtil.extractField(token, "email", String.class);
 
             // 验证 Token 合法性
             if (userEmail == null || !jwtUtil.validateToken(token)) {
                 sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Invalid or expired token");
+                logger.info("Invalid token, request detail: {}", request);
                 return;
             }
 
@@ -99,10 +108,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authenticationToken);
 
+            logger.info("Pass Authentication, request detail: {}, User detail: {}", request, user);
             // 继续过滤器链
             filterChain.doFilter(request, response);
         } catch (Exception e) {
             // 处理异常
+            logger.error("Internal error in authentication, request detail: {}", request);
             sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Internal server error: " + e.getMessage());
         }
     }

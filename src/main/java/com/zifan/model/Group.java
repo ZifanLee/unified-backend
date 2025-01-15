@@ -15,7 +15,7 @@ public class Group {
     private String name;
     private String creatorId;
     private List<String> members;
-    private String type; // public, private
+    private String type;
     private Date createdAt;
     private Date updatedAt;
 

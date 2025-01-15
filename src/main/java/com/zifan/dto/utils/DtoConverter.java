@@ -1,7 +1,11 @@
 package com.zifan.dto.utils;
 
+import com.zifan.dto.response.FriendshipResponse;
 import com.zifan.dto.response.LoginResponse;
+import com.zifan.model.Friendship;
 import com.zifan.model.User;
+
+import java.util.List;
 
 public class DtoConverter {
 
@@ -21,5 +25,23 @@ public class DtoConverter {
         loginResponse.setAvatarUrl(user.getAvatarUrl());
         loginResponse.setBio(user.getBio());
         return loginResponse;
+    }
+
+    public static FriendshipResponse ConvertFrinedship2FriendshipResponse(Friendship friendship) {
+        FriendshipResponse friendshipResponse = new FriendshipResponse();
+        friendshipResponse.setId(friendship.getId().toString());
+        friendshipResponse.setUserEmail(friendship.getUserEmail());
+        friendshipResponse.setFriendEmail(friendship.getFriendEmail());
+        friendshipResponse.setCreatedAt( friendship.getCreatedAt());
+        friendshipResponse.setUpdatedAt(friendship.getUpdatedAt());
+        friendshipResponse.setStatus(friendship.getStatus().name());
+        return friendshipResponse;
+    }
+
+    public static FriendshipResponse ConvertFriendshipList2FriendResponse(String userEmail, List<Friendship> friendships) {
+        FriendshipResponse friendshipResponse = new FriendshipResponse();
+        friendshipResponse.setUserEmail(userEmail);
+        friendshipResponse.setFriendships(friendships);
+        return friendshipResponse;
     }
 }

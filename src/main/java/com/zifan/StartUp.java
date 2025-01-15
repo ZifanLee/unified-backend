@@ -8,6 +8,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @SpringBootApplication
+@ComponentScan(basePackages = "com.zifan")
 public class StartUp {
 
     public static void main(String[] args) {
