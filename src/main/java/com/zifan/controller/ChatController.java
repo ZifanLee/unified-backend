@@ -18,21 +18,25 @@ public class ChatController {
 
     // 发送私聊消息
     @MessageMapping("/chat.sendPrivateMessage")
-    public void sendPrivateMessage(String content, @Header("senderId") String senderId, @Header("receiverId") String receiverId) {
+    public void sendPrivateMessage(String content,
+                                   @Header("senderId") String senderId,
+                                   @Header("receiverId") String receiverId) {
         messageService.sendPrivateMessage(senderId, receiverId, content);
     }
 
     // 发送群聊消息
     @MessageMapping("/chat.sendGroupMessage")
-    public void sendGroupMessage(String content, @Header("senderId") String senderId, @Header("groupId") String groupId) {
+    public void sendGroupMessage(String content,
+                                 @Header("senderId") String senderId,
+                                 @Header("groupId") String groupId) {
         messageService.sendGroupMessage(senderId, groupId, content);
     }
 
     // 分页查询私聊消息
     @GetMapping("/private-messages")
     public Page<Message> getPrivateMessages(
-            @RequestParam String senderId,
-            @RequestParam String receiverId,
+            @RequestParam("senderId") String senderId,
+            @RequestParam("receiverId") String receiverId,
             Pageable pageable) {
         return messageService.getPrivateMessages(senderId, receiverId, pageable);
     }
@@ -40,20 +44,21 @@ public class ChatController {
     // 分页查询群聊消息
     @GetMapping("/group-messages")
     public Page<Message> getGroupMessages(
-            @RequestParam String groupId,
+            @RequestParam("groupId") String groupId,
             Pageable pageable) {
         return messageService.getGroupMessages(groupId, pageable);
     }
 
     // 撤回消息
     @PostMapping("/recall-message")
-    public void recallMessage(@RequestParam String messageId) {
+    public void recallMessage(@RequestParam("messageId") String messageId) {
         messageService.recallMessage(messageId);
     }
 
     // 编辑消息
     @PostMapping("/edit-message")
-    public void editMessage(@RequestParam String messageId, @RequestParam String newContent) {
+    public void editMessage(@RequestParam("messageId") String messageId,
+                            @RequestParam("newContent") String newContent) {
         messageService.editMessage(messageId, newContent);
     }
 }

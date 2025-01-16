@@ -68,5 +68,32 @@ db.messages.insertMany([
   }
 ]);
 
+
+// 创建信号表
+db.user_signals.insertOne({
+  "_id": "lizifan@qq.com",
+  "modules": {
+    "friendship": [
+      {
+        "type": "FRIEND_REQUEST",
+        "id": "request123",
+        "timestamp": "2025-01-16T12:00:00Z"
+      },
+      {
+        "type": "FRIEND_ACCEPT",
+        "id": "friend456",
+        "timestamp": "2025-01-16T12:05:00Z"
+      }
+    ],
+    "message": [
+      {
+        "type": "NEW_MESSAGE",
+        "id": "message789",
+        "timestamp": "2025-01-16T12:10:00Z"
+      }
+    ]
+  }
+});
+
 // 打印初始化完成信息
 print('MongoDB initialization completed successfully!');
