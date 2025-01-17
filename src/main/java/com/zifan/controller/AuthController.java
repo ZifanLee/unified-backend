@@ -12,6 +12,7 @@ import com.zifan.exception.validation.InvalidPasswordException;
 import com.zifan.security.JwtUtil;
 import com.zifan.service.AuthService;
 import com.zifan.model.User;
+import com.zifan.service.UserStatusService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +29,9 @@ public class AuthController {
 
     @Autowired
     private AuthService authService;
+
+    @Autowired
+    private UserStatusService userStatusService;
 
     @Autowired
     private JwtUtil jwtUtil;
@@ -100,6 +104,8 @@ public class AuthController {
             // 返回 Token
             Map<String, String> response = new HashMap<>();
             response.put("token", token);
+            // 更新用户状态， todo: 还需要设计登出，以及状态不重复的检查
+            userStatusService.addUserStatus(request.getEmail(), "online");
             return ResponseEntity.ok(response);
         } catch (UserNotFoundException e) {
             // 用户不存在

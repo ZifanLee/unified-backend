@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:latest
+    container_name: redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./data:/data
+      - ./conf/redis.conf:/usr/local/etc/redis/redis.conf  # 挂载自定义配置文件
+      - ./logs:/var/log/redis  # 挂载 Redis 日志目录到本地
+    command: redis-server /usr/local/etc/redis/redis.conf  # 使用自定义配置文件启动 Redis
+    networks:
+      - redis-network
+
+networks:
+  redis-network:
+    driver: bridge
