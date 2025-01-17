@@ -107,6 +107,35 @@ public class JwtUtil {
     }
 
 
+    // 获取当前认证账户信息
+    public static User getAuthenticatedUser() throws Exception {
+        // 获取当前认证对象
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated()) {
+            // 获取用户信息（Principal）
+            Object principal = authentication.getPrincipal();
+            if (principal instanceof User) {
+                return (User)principal;
+            } else {
+                throw new Exception("Unable to extract authenticated user from JWT");
+            }
+        } else {
+            throw new Exception("Unable to extract authenticated user from JWT");
+        }
+    }
+
+
+    // 检查给定邮箱参数是否是当前认证账户
+    public static boolean AuthenticateEmail(String Email) {
+        try {
+            User user = getAuthenticatedUser();
+            return Email.equals(user.getEmail());
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+
     public static String generateSecret() {
         SecretKey key = Keys.secretKeyFor(io.jsonwebtoken.SignatureAlgorithm.HS256);
 

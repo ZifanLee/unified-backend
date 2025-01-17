@@ -13,5 +13,8 @@ unified backend service for lingxi im system
 用于支持关系型数据场景，例如业务数据存储
 ### mongoDB
 用于支持nosql场景，以及大量数据场景，例如消息存储
+### rabbitMQ
+用于支持在线的消息传递，基于发布订阅实现单点消息和群发消息
+### 
 
 
