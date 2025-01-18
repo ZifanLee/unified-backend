@@ -4,6 +4,7 @@ import com.zifan.dto.request.LoginRequest;
 import com.zifan.dto.request.RegisterRequest;
 import com.zifan.dto.response.ApiResponse;
 import com.zifan.dto.response.LoginResponse;
+import com.zifan.dto.response.RegisterResponse;
 import com.zifan.dto.utils.DtoConverter;
 import com.zifan.exception.bussiness.DuplicateUserException;
 import com.zifan.exception.bussiness.UserNotFoundException;
@@ -44,21 +45,21 @@ public class AuthController {
      * @return 统一响应格式
      */
     @PostMapping("/register")
-    public ApiResponse<LoginResponse> register(@RequestBody RegisterRequest request) {
+    public ApiResponse<RegisterResponse> register(@RequestBody RegisterRequest request) {
         logger.info("用户注册请求: 邮箱 {}", request.getEmail());
 
         try {
             // 调用 Service 层注册方法
             User user = authService.register(request);
-            LoginResponse loginResponse = DtoConverter.ConvertUser2LoginResponse(user);
+            RegisterResponse registerResponse = DtoConverter.ConvertUser2RegisterResponse(user);
             HashMap<String, Object> hashMap = new HashMap<>();
             hashMap.put("email", request.getEmail());
             String token = jwtUtil.generateToken(hashMap);
-            loginResponse.setToken(token);
+            registerResponse.setToken(token);
 
             // 返回成功响应
             logger.info("用户注册成功: 邮箱 {}", request.getEmail());
-            return ApiResponse.success(loginResponse, "注册成功");
+            return ApiResponse.success(registerResponse, "注册成功");
         } catch (DuplicateUserException | InvalidFieldException | IllegalArgumentException e) {
             // 处理已知异常
             logger.error("用户注册失败: 邮箱 {}, 错误信息: {}", request.getEmail(), e.getMessage());
@@ -77,7 +78,7 @@ public class AuthController {
      * @return 统一响应格式
      */
     @PostMapping("/login")
-    public ApiResponse<String> login(@RequestBody LoginRequest request) {
+    public ApiResponse<LoginResponse> login(@RequestBody LoginRequest request) {
         logger.info("用户登录请求: 邮箱 {}", request.getEmail());
 
         try {
@@ -89,7 +90,7 @@ public class AuthController {
 
             // 返回成功响应
             logger.info("用户登录成功: 邮箱 {}", request.getEmail());
-            return ApiResponse.success("登录成功", token);
+            return ApiResponse.success(new LoginResponse(token), "登录成功");
         } catch (UserNotFoundException | InvalidPasswordException | IllegalArgumentException e) {
             // 处理已知异常
             logger.error("用户登录失败: 邮箱 {}, 错误信息: {}", request.getEmail(), e.getMessage());

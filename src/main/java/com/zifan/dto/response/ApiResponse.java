@@ -32,4 +32,11 @@ public class ApiResponse<T> {
         response.setMessage(message);
         return response;
     }
+
+    public static <T> ApiResponse<T> error(String message) {
+        ApiResponse<T> response = new ApiResponse<>();
+        response.setStatus(400);
+        response.setMessage(message);
+        return response;
+    }
 }

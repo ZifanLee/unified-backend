@@ -1,5 +1,6 @@
 package com.zifan.service;
 
+import com.zifan.exception.validation.IllegalUserEmailException;
 import com.zifan.model.UserSignal;
 import com.zifan.model.enumType.SignalModule;
 import com.zifan.model.enumType.SignalType;
@@ -56,16 +57,28 @@ public class SignalService {
         signal.setType(SignalType.NEW_MESSAGE);
         signal.setId(messageId);
         signal.setTimestamp(LocalDateTime.now());
+        if (existsById(userEmail, SignalModule.MESSAGE.name(), messageId)) {
+            logger.info("Already exist signal, module {}, id: {}, refuse insert signal",
+                    SignalModule.MESSAGE.name(),
+                    messageId);
+            return true;
+        }
         return addSignal(userEmail, SignalModule.MESSAGE.name(), signal);
     }
 
     // 获取用户的所有信号
     public Optional<UserSignal> getAllSignals(String userEmail) {
+        if (!JwtUtil.AuthenticateEmail(userEmail)) {
+            throw new IllegalUserEmailException();
+        }
         return signalRepository.findByUserEmail(userEmail);
     }
 
     // 获取用户某个模块的信号, 只返回指定模块
     public Optional<UserSignal> getSignalsByModule(String userEmail, String module) {
+        if (!JwtUtil.AuthenticateEmail(userEmail)) {
+            throw new IllegalUserEmailException();
+        }
         if (!validateModule(module)) {
             throw new IllegalArgumentException("unsupported module type: " + module);
         }
@@ -83,6 +96,9 @@ public class SignalService {
 
     // 获取用户某个信号类型的信号
     public List<UserSignal.Signal> getSignalsByType(String userEmail, String signalType) {
+        if (!JwtUtil.AuthenticateEmail(userEmail)) {
+            throw new IllegalUserEmailException();
+        }
         return signalRepository.findByUserEmailAndSignalType(userEmail, signalType)
                 .map(userSignal -> userSignal.getModules().values().stream()
                         .flatMap(List::stream)
@@ -101,6 +117,9 @@ public class SignalService {
 
     // 获取指定userEmail module ID的记录
     public Optional<UserSignal.Signal> getSingleSignalById(String userEmail, String module, String id) {
+        if (!JwtUtil.AuthenticateEmail(userEmail)) {
+            throw new IllegalUserEmailException();
+        }
         if (!validateModule(module)) {
             throw new IllegalArgumentException("unsupported module type: " + module);
         }
@@ -120,6 +139,9 @@ public class SignalService {
 
     // 删除指定用户模块 ID 的记录
     public void deleteById(String userEmail, String module, String id) {
+        if (!JwtUtil.AuthenticateEmail(userEmail)) {
+            throw new IllegalUserEmailException();
+        }
         if (!validateModule(module)) {
             throw new IllegalArgumentException("unsupported module type: " + module);
         }
@@ -128,6 +150,9 @@ public class SignalService {
 
     // 删除用户某个模块的信号
     public void deleteModule(String userEmail, String module) {
+        if (!JwtUtil.AuthenticateEmail(userEmail)) {
+            throw new IllegalUserEmailException();
+        }
         if (!validateModule(module)) {
             throw new IllegalArgumentException("unsupported module type: " + module);
         }
@@ -136,11 +161,17 @@ public class SignalService {
 
     // 删除用户某个信号类型的信号
     public void deleteSignalType(String userEmail, String signalType) {
+        if (!JwtUtil.AuthenticateEmail(userEmail)) {
+            throw new IllegalUserEmailException();
+        }
         signalRepository.deleteSignalTypeByUserEmail(userEmail, signalType);
     }
 
     // 清空用户的信号
     public void clearSignals(String userEmail) {
+        if (!JwtUtil.AuthenticateEmail(userEmail)) {
+            throw new IllegalUserEmailException();
+        }
         signalRepository.deleteByUserEmail(userEmail);
     }
 
